@@ -1,0 +1,4 @@
+[submodule "humanytek-team/pos_order_line"]
+	path = humanytek-team/pos_order_line
+	url = git@github.com:humanytek-team/pos_order_line.git
+	branch = 15.0
