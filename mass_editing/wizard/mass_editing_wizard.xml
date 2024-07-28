@@ -11,34 +11,28 @@ License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
         <field name="arch" type="xml">
             <form>
                 <header />
-                <p
-                    class="oe_grey"
-                    attrs="{'invisible':
-                    [('message', '=', False)]}"
-                >
+                <p class="oe_grey" invisible="1">
+                    <attribute name="modifiers">
+                        {"invisible": [["message", "=", False]]}
+                    </attribute>
                     <field name="message" />
                 </p>
-                <p
-                    class="alert alert-info"
-                    role="alert"
-                    attrs="{'invisible':
-                    [('operation_description_info', '=', False)]}"
-                >
+                <p class="alert alert-info" role="alert" invisible="1">
+                    <attribute name="modifiers">
+                        {"invisible": [["operation_description_info", "=", False]]}
+                    </attribute>
                     <field name="operation_description_info" />
                 </p>
-                <p
-                    class="alert alert-warning"
-                    role="alert"
-                    attrs="{'invisible':
-                    [('operation_description_warning', '=', False)]}"
-                >
+                <p class="alert alert-warning" role="alert" invisible="1">
+                    <attribute name="modifiers">
+                        {"invisible": [["operation_description_warning", "=", False]]}
+                    </attribute>
                     <field name="operation_description_warning" />
                 </p>
-                <p
-                    class="alert alert-danger"
-                    role="alert"
-                    attrs="{'invisible': [('operation_description_danger', '=', False)]}"
-                >
+                <p class="alert alert-danger" role="alert" invisible="1">
+                    <attribute name="modifiers">
+                        {"invisible": [["operation_description_danger", "=", False]]}
+                    </attribute>
                     <field name="operation_description_danger" />
                 </p>
                 <group>
