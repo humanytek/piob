@@ -11,3 +11,8 @@
 [submodule "auto_exporter"]
 	path = auto_exporter
 	url = git@github.com:humanytek-team/auto_exporter.git
+
+[submodule "OCA/server-ux"]
+	path = OCA/server-ux
+	url = git@github.com:OCA/server-ux.git
+	branch = 17.0
