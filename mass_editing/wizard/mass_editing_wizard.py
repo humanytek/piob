@@ -153,68 +153,69 @@ class MassEditingWizard(models.TransientModel):
         field_info["domain"] = "[]"
         return field_info
 
-    @api.model
-    def create(self, vals):
-        server_action_id = self.env.context.get("server_action_id")
-        server_action = self.env["ir.actions.server"].sudo().browse(server_action_id)
-        active_ids = self.env.context.get("active_ids", [])
-        if server_action and active_ids:
-            TargetModel = self.env[server_action.model_id.model]
-            IrModelFields = self.env["ir.model.fields"].sudo()
-            IrTranslation = self.env["ir.translation"]
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            server_action_id = self.env.context.get("server_action_id")
+            server_action = self.env["ir.actions.server"].sudo().browse(server_action_id)
+            active_ids = self.env.context.get("active_ids", [])
+            if server_action and active_ids:
+                TargetModel = self.env[server_action.model_id.model]
+                IrModelFields = self.env["ir.model.fields"].sudo()
+                IrTranslation = self.env["ir.translation"]
 
-            values = {}
-            for key, val in vals.items():
-                if key.startswith("selection_"):
-                    split_key = key.split("__", 1)[1]
-                    if val == "set":
-                        values.update({split_key: vals.get(split_key, False)})
+                values = {}
+                for key, val in vals.items():
+                    if key.startswith("selection_"):
+                        split_key = key.split("__", 1)[1]
+                        if val == "set":
+                            values.update({split_key: vals.get(split_key, False)})
 
-                    elif val == "remove":
-                        values.update({split_key: False})
+                        elif val == "remove":
+                            values.update({split_key: False})
 
-                        # If field to remove is translatable,
-                        # its translations have to be removed
-                        model_field = IrModelFields.search(
-                            [
-                                ("model", "=", server_action.model_id.model),
-                                ("name", "=", split_key),
-                            ]
-                        )
-                        if model_field and model_field.translate:
-                            translations = IrTranslation.search(
+                            # If field to remove is translatable,
+                            # its translations have to be removed
+                            model_field = IrModelFields.search(
                                 [
-                                    ("res_id", "in", active_ids),
-                                    ("type", "=", "model"),
-                                    (
-                                        "name",
-                                        "=",
-                                        "{},{}".format(
-                                            server_action.model_id.model, split_key
-                                        ),
-                                    ),
+                                    ("model", "=", server_action.model_id.model),
+                                    ("name", "=", split_key),
                                 ]
                             )
-                            translations.unlink()
+                            if model_field and model_field.translate:
+                                translations = IrTranslation.search(
+                                    [
+                                        ("res_id", "in", active_ids),
+                                        ("type", "=", "model"),
+                                        (
+                                            "name",
+                                            "=",
+                                            "{},{}".format(
+                                                server_action.model_id.model, split_key
+                                            ),
+                                        ),
+                                    ]
+                                )
+                                translations.unlink()
 
-                    elif val == "remove_m2m":
-                        m2m_list = []
-                        if vals.get(split_key):
-                            for m2m_id in vals.get(split_key)[0][2]:
-                                m2m_list.append((3, m2m_id))
-                        if m2m_list:
+                        elif val == "remove_m2m":
+                            m2m_list = []
+                            if vals.get(split_key):
+                                for m2m_id in vals.get(split_key)[0][2]:
+                                    m2m_list.append((3, m2m_id))
+                            if m2m_list:
+                                values.update({split_key: m2m_list})
+                            else:
+                                values.update({split_key: [(5, 0, [])]})
+
+                        elif val == "add":
+                            m2m_list = []
+                            for m2m_id in vals.get(split_key, False)[0][2]:
+                                m2m_list.append((4, m2m_id))
                             values.update({split_key: m2m_list})
-                        else:
-                            values.update({split_key: [(5, 0, [])]})
-
-                    elif val == "add":
-                        m2m_list = []
-                        for m2m_id in vals.get(split_key, False)[0][2]:
-                            m2m_list.append((4, m2m_id))
-                        values.update({split_key: m2m_list})
-            if values:
-                TargetModel.browse(active_ids).write(values)
-        return super().create({})
+                if values:
+                    TargetModel.browse(active_ids).write(values)
+            return super().create({})
 
     def read(self, fields, load="_classic_read"):
         """Without this call, dynamic fields build by fields_view_get()
