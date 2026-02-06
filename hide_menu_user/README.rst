@@ -8,6 +8,7 @@ Hide Any Menu User Wise
 
 Installation
 ============
+- www.odoo.com/documentation/17.0/setup/install.html
 - Install our custom addon
 
 Configuration
@@ -25,11 +26,7 @@ Company
 
 Credits
 -------
-*  Developer: (V19)Ashwin A,
-(V18)Sreerag PM,
-(V17)Ranjith R ,
-
-    Contact : odoo@cybrosys.com
+*  Developer: (V17)Ranjith R , Contact : odoo@cybrosys.com
 
 Contacts
 --------
