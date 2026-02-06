@@ -54,7 +54,7 @@ class ResUsers(models.Model):
 
     @api.depends('group_ids')
     def _compute_is_show_specific_menu(self):
-        """ compute function of the field is show specific menu """
+        """Compute if user is admin to show the menu"""
         group_id = self.env.ref('base.group_user')
         for rec in self:
             if group_id and group_id.id in rec.group_ids.ids:
