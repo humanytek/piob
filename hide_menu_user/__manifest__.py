@@ -3,7 +3,7 @@
 #
 #    Cybrosys Technologies Pvt. Ltd.
 #
-#    Copyright (C) 2023-TODAY Cybrosys Technologies(<https://www.cybrosys.com>)
+#    Copyright (C) 2025-TODAY Cybrosys Technologies(<https://www.cybrosys.com>)
 #    Author: Cybrosys Techno Solutions(<https://www.cybrosys.com>)
 #
 #    You can modify it under the terms of the GNU LESSER
@@ -21,18 +21,22 @@
 #############################################################################
 {
     'name': 'Hide Any Menu User Wise',
-    'version': '17.0.1.0.0',
+    'version': '19.0.1.0.0',
     'category': 'Extra Tools',
-    'summary': 'Hide Menu, Odoo17 Hide Menu, Hide Menu Odoo, Restrict Menu Items, Odoo17 Menu, Odoo17, Odoo Apps',
-    'description': 'Hide Any Menu Item User Wise, Hide Menu Items, Hide Menu',
+    'summary': 'This Module Helps To Hide any Menu items user wise.',
+    'description': """This module provides functionality to hide or restrict menu 
+    items on a per-user basis in Odoo.
+    With this feature, administrators can manage which menus each user is allowed 
+    to see. It ensures that users only have access to the relevant parts of the system,
+     improving both security and usability.""",
     'author': 'Cybrosys Techno Solutions',
     'company': 'Cybrosys Techno Solutions',
     'maintainer': 'Cybrosys Techno Solutions',
     'website': "https://www.cybrosys.com",
     'depends': ['base'],
     'data': [
-        'security/security.xml',
         'views/res_users_views.xml',
+        'views/ir_ui_menu_views.xml',
     ],
     'license': 'LGPL-3',
     'images': ['static/description/banner.jpg'],
