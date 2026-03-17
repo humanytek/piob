@@ -1,52 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <record id="pos_order_line_view_list" model="ir.ui.view">
-    <field name="name">pos.order.line.view.list</field>
-    <field name="model">pos.order.line</field>
+  <record id="pos_order_form_inherit_translated_name" model="ir.ui.view">
+    <field name="name">pos.order.form.inherit.translated.name</field>
+    <field name="model">pos.order</field>
+    <field name="inherit_id" ref="point_of_sale.view_pos_pos_form"/>
     <field name="arch" type="xml">
-      <list>
-        <field name="product_id" readonly="1"/>
-        <field name="qty" readonly="1" sum="Total qty"/>
-        <field name="discount" readonly="1"/>
-        <field name="price_unit" readonly="1" widget="monetary"/>
-        <field name="price_subtotal" readonly="1" sum="Sum of subtotals" widget="monetary"/>
-        <field name="price_subtotal_incl" readonly="1" sum="Sum of subtotals" widget="monetary"/>
-        <field name="create_date" readonly="1"/>
-        <field name="currency_id" column_invisible="True"/>
-        <field name="order_name"/>
-        <field name="order_session_id"/>
-        <field name="order_partner_id"/>
-        <field name="order_date_order"/>
-        <field name="order_user_id"/>
-        <field name="order_fiscal_position_id"/>
-        <field name="full_product_name"/>
-        <field name="pack_lot_ids" widget="many2many_tags" groups="stock.group_production_lot"/>
-        <field name="qty"/>
-        <field name="customer_note" optional="hide"/>
-        <field name="product_uom_id" string="UoM" groups="uom.group_uom"/>
-        <field name="price_unit" widget="monetary"/>
-        <field name="is_total_cost_computed" invisible="1"/>
-        <field name="total_cost" invisible="{'is_total_cost_computed': [('=', False)]}" optional="hide" widget="monetary"/>
-        <field name="margin" invisible="{'is_total_cost_computed': [('=', False)]}" optional="hide" widget="monetary"/>
-        <field name="margin_percent" invisible="{'is_total_cost_computed': [('=', False)]}" optional="hide" widget="percentage"/>
-        <field name="discount" string="Disc.%"/>
-        <field name="tax_ids_after_fiscal_position" widget="many2many_tags" string="Taxes"/>
-        <field name="tax_ids" widget="many2many_tags" invisible="1"/>
-        <field name="price_subtotal" widget="monetary" force_save="1"/>
-        <field name="price_subtotal_incl" widget="monetary" force_save="1"/>
-        <field name="currency_id" invisible="1"/>
-        <field name="refunded_qty" optional="hide"/>
-      </list>
+      <xpath expr="//field[@name='lines']//list/field[@name='full_product_name']" position="after">
+        <field name="translated_product_name" column_invisible="True"/>
+      </xpath>
     </field>
   </record>
-
-  <record id="pos_order_line_action" model="ir.actions.act_window">
-    <field name="name">PoS Order Line</field>
-    <field name="res_model">pos.order.line</field>
-    <field name="view_mode">list</field>
-    <field name="view_id" ref="pos_order_line_view_list"/>
-  </record>
-
-  <menuitem id="pos_order_line_menu" name="Order Lines" parent="point_of_sale.menu_point_of_sale" action="pos_order_line_action"/>
 </odoo>
-
