@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <!-- Hierarchy: Operator < Supervisor (implies Operator) < Admin (implies Supervisor + stock.group_stock_manager) -->
+        <record id="privilege_stock_transfer_control" model="res.groups.privilege">
+            <field name="name">Control de Transferencias de Almacén</field>
+            <field name="category_id" ref="base.module_category_supply_chain"/>
+        </record>
+
+        <!-- Tier 1: Operador Inventario - solo escanea, no modifica estructura -->
+        <record id="group_stock_operator" model="res.groups">
+            <field name="name">Operador Inventario</field>
+            <field name="privilege_id" ref="privilege_stock_transfer_control"/>
+            <field name="implied_ids" eval="[(4, ref('stock.group_stock_user'))]"/>
+            <field name="comment">Puede procesar operaciones en almacenes permitidos. Solo puede escanear, no modificar estructura del movimiento.</field>
+        </record>
+
+        <!-- Tier 2: Supervisor Logístico - puede autorizar excepciones (implies Operator) -->
+        <record id="group_stock_logistics_supervisor" model="res.groups">
+            <field name="name">Supervisor Logístico</field>
+            <field name="privilege_id" ref="privilege_stock_transfer_control"/>
+            <field name="implied_ids" eval="[(4, ref('alx_stock_transfer_control.group_stock_operator'))]"/>
+            <field name="comment">Puede autorizar excepciones, capturar manualmente y corregir movimientos.</field>
+        </record>
+
+        <!-- Tier 3: Administrador de Transferencias de Inventario - acceso total (implies Supervisor + Stock Manager) -->
+        <record id="group_stock_inventory_admin" model="res.groups">
+            <field name="name">Administrador de Transferencias de Inventario</field>
+            <field name="privilege_id" ref="privilege_stock_transfer_control"/>
+            <field name="implied_ids" eval="[(4, ref('alx_stock_transfer_control.group_stock_logistics_supervisor')), (4, ref('stock.group_stock_manager'))]"/>
+            <field name="comment">Puede configurar rutas, ubicaciones y reglas globales.</field>
+        </record>
+
+    </data>
+</odoo>
