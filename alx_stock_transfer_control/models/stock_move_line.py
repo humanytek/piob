@@ -75,13 +75,12 @@ class StockMoveLine(models.Model):
         qty_fields = {'quantity', 'picked', 'qty_done'}
         writing_qty = qty_fields.intersection(vals)
 
-        # Qty restriction: operators AND supervisors must always use the Barcode App.
-        # Only admins (group_stock_inventory_admin) can edit quantities directly.
-        if writing_qty and not from_barcode and not self.env.su:
-            if not self.env.user.has_group('alx_stock_transfer_control.group_stock_inventory_admin'):
-                _logger.warning("[ML WRITE] BLOCKED manual qty change: user=%s ids=%s",
-                    self.env.user.login, self.ids)
-                raise ValidationError(_("No se permiten cambios manuales de cantidades. Utilice la aplicación de Código de Barras para escanear los productos."))
+        # Qty restriction: only restricted operators must use the Barcode App.
+        # Supervisors and other internal users may update quantities outside the barcode flow.
+        if writing_qty and not from_barcode and self._user_is_restricted_operator():
+            _logger.warning("[ML WRITE] BLOCKED manual qty change: user=%s ids=%s",
+                self.env.user.login, self.ids)
+            raise ValidationError(_("No se permiten cambios manuales de cantidades. Utilice la aplicación de Código de Barras para escanear los productos."))
 
         # Mark barcode capture for any role scanning via the app
         if writing_qty and from_barcode:
