@@ -21,7 +21,7 @@
     'company': 'Arca Labs',
     'maintainer': 'Arca Labs',
     'website': "https://www.arcalabs.com",
-    'depends': ['base', 'stock', 'stock_barcode'],
+    'depends': ['base', 'stock', 'stock_barcode', 'point_of_sale', 'sale_stock'],
     'data': [
         "security/security_groups.xml",
         "security/stock_move_line_rules.xml",
