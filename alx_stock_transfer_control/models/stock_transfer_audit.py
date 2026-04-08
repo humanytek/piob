@@ -23,14 +23,15 @@ class StockTransferAudit(models.Model):
             ('operation_change', 'Operación Modificada'),
         ], string='Acción', required=True)
     
-    user_id = fields.Many2one('res.users', string='Usuario', 
-        required=True, default=lambda self: self.env.user, index=True)
+    user_id = fields.Many2one('res.users', string='Usuario', required=True, default=lambda self: self.env.user, index=True)
     authorized_by_id = fields.Many2one('res.users', string='Autorizado Por', index=True)
     reason = fields.Text(string='Motivo / Nota')
     
     product_id = fields.Many2one('product.product', string='Producto')
     qty_expected = fields.Float(string='Cantidad Esperada', digits='Product Unit of Measure')
     qty_done = fields.Float(string='Cantidad Realizada', digits='Product Unit of Measure')
+    
     location_id = fields.Many2one('stock.location', string='Ubicación de Origen')
     location_dest_id = fields.Many2one('stock.location', string='Ubicación de Destino')
+    
     date = fields.Datetime(string='Fecha',required=True,default=fields.Datetime.now,index=True)

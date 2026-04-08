@@ -3,18 +3,9 @@ from odoo import models, fields, api
 class ResUsers(models.Model):
     _inherit = 'res.users'
 
-    allowed_warehouse_ids = fields.Many2many(
-        'stock.warehouse',
-        'res_users_allowed_warehouse_rel',
-        'user_id',
-        'warehouse_id',
-        string="Almacenes Permitidos"
-    )
+    allowed_warehouse_ids = fields.Many2many('stock.warehouse', 'res_users_allowed_warehouse_rel', 'user_id', 'warehouse_id', string="Almacenes Permitidos")
 
-    is_stock_transfer_operator = fields.Boolean(
-        compute='_compute_is_stock_transfer_operator',
-        string='Es Únicamente Operador de Transferencias',
-    )
+    is_stock_transfer_operator = fields.Boolean(compute='_compute_is_stock_transfer_operator', string='Es Únicamente Operador de Transferencias')
 
     @api.depends('group_ids')
     def _compute_is_stock_transfer_operator(self):
@@ -37,14 +28,14 @@ class ResUsers(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
+        
         if 'group_ids' in vals:
-            # When a user is promoted to supervisor or admin, warehouse restrictions
-            # no longer apply — clear them so the field doesn't hold stale data.
-            no_longer_operators = self.filtered(
-                lambda u: u.allowed_warehouse_ids and not u.is_stock_transfer_operator
-            )
+            # When a user is promoted to supervisor or admin, warehouse restrictions are cleared.
+            no_longer_operators = self.filtered(lambda u: u.allowed_warehouse_ids and not u.is_stock_transfer_operator)
+            
             if no_longer_operators:
                 no_longer_operators.write({'allowed_warehouse_ids': [(5, 0, 0)]})
+        
         return res
 
     def _get_invalidation_fields(self):

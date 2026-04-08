@@ -5,21 +5,10 @@ from odoo.tools.float_utils import float_compare, float_is_zero
 class StockPicking(models.Model):
     _inherit = 'stock.picking'
 
-    transfer_audit_ids = fields.One2many(
-        'stock.transfer.audit',
-        'picking_id',
-        string='Registro de Auditoría',
-        readonly=True,
-    )
+    transfer_audit_ids = fields.One2many('stock.transfer.audit','picking_id',string='Registro de Auditoría',readonly=True)
 
-    user_can_edit_operations = fields.Boolean(
-        compute='_compute_user_can_edit_operations',
-        help='True for supervisors/admins: can edit locations, operation type, and see Validate button.',
-    )
-    user_can_edit_qty = fields.Boolean(
-        compute='_compute_user_can_edit_qty',
-        help='True only for admins: can edit quantities directly. Operators and supervisors must use the Barcode App.',
-    )
+    user_can_edit_operations = fields.Boolean(compute='_compute_user_can_edit_operations',help='True for supervisors/admins: can edit locations, operation type, and see Validate button.')
+    user_can_edit_qty = fields.Boolean(compute='_compute_user_can_edit_qty', help='True only for admins: can edit quantities directly. Operators and supervisors must use the Barcode App.',)
 
     @api.depends('state')
     @api.depends_context('uid')
@@ -28,6 +17,7 @@ class StockPicking(models.Model):
         # Operators are excluded: they may only scan via the Barcode App.
         user = self.env.user
         has_permission = user.has_group('alx_stock_transfer_control.group_stock_logistics_supervisor')
+        
         for picking in self:
             picking.user_can_edit_operations = has_permission and picking.state != 'done'
 
@@ -38,23 +28,22 @@ class StockPicking(models.Model):
         # Both operators and supervisors must scan via the Barcode App.
         user = self.env.user
         has_permission = user.has_group('alx_stock_transfer_control.group_stock_inventory_admin')
+        
         for picking in self:
             picking.user_can_edit_qty = has_permission and picking.state != 'done'
-
-    # -------------------------------------------------------------------------
-    # Helpers
-    # -------------------------------------------------------------------------
 
     def _user_can_bypass_barcode_check(self):
         """Supervisors and Admins can validate transfers that have manual entry reasons."""
         if self.env.su:
             return True
+        
         return self.env.user.has_group('alx_stock_transfer_control.group_stock_logistics_supervisor')
 
     def _user_can_bypass_qty_check(self):
         """Only Admins (and sudo) can validate with quantity differences vs. demand."""
         if self.env.su:
             return True
+        
         return self.env.user.has_group('alx_stock_transfer_control.group_stock_inventory_admin')
 
     def _user_is_restricted_operator(self):
@@ -72,12 +61,8 @@ class StockPicking(models.Model):
     # -------------------------------------------------------------------------
     # ORM overrides
     # -------------------------------------------------------------------------
-
     def write(self, vals):
-        """
-        Block structural field changes for Operators.
-        Supervisors and Admins can change anything.
-        """
+        """Block structural field changes for Operators. Supervisors and Admins can change anything."""
         protected_fields = {'picking_type_id', 'location_id', 'location_dest_id', 'move_ids_without_package'}
 
         if protected_fields.intersection(vals.keys()) and self._user_is_restricted_operator():
@@ -91,19 +76,15 @@ class StockPicking(models.Model):
                     'reason': f'Blocked attempt to change {", ".join(changed)}',
                 })
 
-            raise ValidationError(_(
-                "No tiene permiso para modificar el tipo de operación o las ubicaciones del traslado. "
-                "Contacte a su supervisor."
-            ))
+            raise ValidationError(_("No tiene permiso para modificar el tipo de operación o las ubicaciones del traslado. Contacte a su supervisor."))
 
         return super().write(vals)
 
     def unlink(self):
         """Only Admins can delete a picking."""
         if not self.env.su and not self.env.user.has_group('alx_stock_transfer_control.group_stock_inventory_admin'):
-            raise ValidationError(_(
-                "No puede eliminar un traslado. Solo los administradores de inventario pueden realizar esta acción."
-            ))
+            raise ValidationError(_("No puede eliminar un traslado. Solo los administradores de inventario pueden realizar esta acción."))
+        
         return super().unlink()
 
     # -------------------------------------------------------------------------
@@ -111,8 +92,7 @@ class StockPicking(models.Model):
     # -------------------------------------------------------------------------
     def _check_exact_quantities(self):
         """
-        Operators: must scan EXACTLY the expected quantity on every move.
-        Supervisors/Admins: can validate with differences (but it's audited).
+        Operators/Supervisors: must scan EXACTLY the expected quantity on every move.
         """
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for picking in self:
@@ -134,6 +114,7 @@ class StockPicking(models.Model):
                             'authorized_by_id': self.env.user.id,
                             'reason': 'Admin validated with quantity difference.',
                         })
+
                     else:
                         raise ValidationError(_(
                             "Discrepancia de cantidad en el producto '%(product)s': "
@@ -146,8 +127,8 @@ class StockPicking(models.Model):
 
     def _check_barcode_capture(self):
         """
-        Operators: ALL move lines must be captured via the Barcode App.
-        Supervisors/Admins: can validate with manual entries (audited).
+        Operators/Supervisors: ALL move lines must be captured via the Barcode App.
+        Administrators: can validate with manual entries (audited).
         """
         for picking in self:
             # 'picked' means operator confirmed this line is done
@@ -169,23 +150,22 @@ class StockPicking(models.Model):
                         'authorized_by_id': self.env.user.id,
                         'reason': line.manual_entry_reason or 'Manual entry by supervisor/admin.',
                     })
+            
             else:
                 products = ', '.join(manual_lines.mapped('product_id.display_name'))
                 raise ValidationError(_(
                     "Los siguientes productos no fueron escaneados con la aplicación de Código de Barras: %(products)s. "
                     "Debe escanear todos los productos antes de validar.",
-                    products=products,
+                    products=products
                 ))
 
     def _check_has_lines(self):
         """Block validation of pickings with no move lines at all."""
         for picking in self:
             if not picking.move_line_ids:
-                raise ValidationError(_(
-                    "El traslado '%(name)s' no tiene líneas para validar. "
+                raise ValidationError(_("El traslado '%(name)s' no tiene líneas para validar. "
                     "Escanee los productos con la aplicación de Código de Barras primero.",
-                    name=picking.name,
-                ))
+                    name=picking.name))
 
     # -------------------------------------------------------------------------
     # button_validate override

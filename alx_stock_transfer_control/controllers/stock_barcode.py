@@ -19,13 +19,10 @@ class StockTransferBarcodeController(StockBarcodeController):
 
     @http.route('/stock_barcode/save_barcode_data', type='jsonrpc', auth='user')
     def save_barcode_data(self, model, res_id, write_field, write_vals):
-        # NOTE: if this log line never appears, Odoo's router is using the parent
-        # class route directly (registered first at stock_barcode module load).
-        # Detection falls back to HTTP path inspection in stock_move_line._is_from_barcode_app().
         _logger.info("[BARCODE SAVE] CONTROLLER HIT user=%s model=%s res_id=%s write_field=%s",request.env.user.login, model, res_id, write_field,)
         _logger.debug("[BARCODE SAVE] write_vals=%s", write_vals)
-        # Belt-and-suspenders: inject context flag for the ORM write chain.
+       
+        # Inject context flag for the ORM write chain.
         request.update_env(context={**request.env.context, 'from_barcode_app': True})
         result = super().save_barcode_data(model, res_id, write_field, write_vals)
-        _logger.info("[BARCODE SAVE] completed successfully for res_id=%s", res_id)
         return result
