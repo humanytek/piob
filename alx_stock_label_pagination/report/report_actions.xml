@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Reporte A4: varias etiquetas por hoja, 3 columnas -->
+        <record id="action_report_label_pagination_a4" model="ir.actions.report">
+            <field name="name">Etiquetas de Inventario (A4)</field>
+            <field name="model">stock.move.line</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">alx_stock_label_pagination.report_label_pagination</field>
+            <field name="report_file">alx_stock_label_pagination.report_label_pagination</field>
+            <field name="paperformat_id" ref="product.paperformat_label_sheet"/>
+        </record>
+
+        <!-- Reporte Dymo: una etiqueta por página, usa el formato nativo de Odoo -->
+        <record id="action_report_label_pagination_dymo" model="ir.actions.report">
+            <field name="name">Etiquetas de Inventario (Dymo)</field>
+            <field name="model">stock.move.line</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">alx_stock_label_pagination.report_label_dymo</field>
+            <field name="report_file">alx_stock_label_pagination.report_label_dymo</field>
+            <field name="paperformat_id" ref="product.paperformat_label_sheet_dymo"/>
+        </record>
+
+        <!-- Server action para abrir el wizard desde lista/formulario de stock.picking -->
+        <record id="action_server_label_pagination" model="ir.actions.server">
+            <field name="name">Etiquetas con Paginación</field>
+            <field name="model_id" ref="stock.model_stock_picking"/>
+            <field name="binding_model_id" ref="stock.model_stock_picking"/>
+            <field name="binding_type">action</field>
+            <field name="state">code</field>
+            <field name="code">action = records.action_open_label_pagination_wizard()</field>
+        </record>
+
+    </data>
+</odoo>
