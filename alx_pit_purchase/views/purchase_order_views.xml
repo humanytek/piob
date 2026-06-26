@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="purchase_order_line_pit_form" model="ir.ui.view">
+        <field name="name">purchase.order.line.pit.form</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='order_line']/list/field[@name='price_unit']" position="after">
+                <field name="product_list_price" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="view_stock_label_pagination_wizard_form" model="ir.ui.view">
+            <field name="name">alx.stock.label.pagination.wizard.form</field>
+            <field name="model">alx.stock.label.pagination.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Imprimir Etiquetas">
+
+                    <group string="Transferencias seleccionadas">
+                        <field name="picking_ids" widget="many2many_tags" readonly="1" nolabel="1" colspan="2"/>
+                    </group>
+
+                    <group string="Formato y cantidad">
+                        <group>
+                            <field name="label_format"/>
+                            <field name="batch_size"/>
+                        </group>
+                        <group>
+                            <field name="total_labels" readonly="1"/>
+                            <field name="total_batches" readonly="1" string="Archivos PDF en el ZIP"/>
+                        </group>
+                    </group>
+
+                    <div class="alert alert-info" role="alert">
+                        Se genera un archivo ZIP con un PDF por cada lote de
+                        <strong><field name="batch_size" nolabel="1" style="display:inline;"/></strong>
+                        etiquetas. Cada etiqueta corresponde a una unidad del producto.
+                    </div>
+
+                    <footer>
+                        <button name="action_print_zip"
+                                string="Generar ZIP"
+                                type="object"
+                                class="btn-primary"/>
+                        <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                    </footer>
+
+                </form>
+            </field>
+        </record>
+
+    </data>
+</odoo>
