@@ -2,6 +2,7 @@
 import base64
 import io
 import zipfile
+from collections import defaultdict
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
@@ -77,9 +78,59 @@ class StockLabelPaginationWizard(models.TransientModel):
     # Opción A — ZIP: múltiples PDFs empaquetados en un solo archivo
     # -------------------------------------------------------------------------
 
+    def _render_dymo_pdf(self, batch_qty):
+        """Genera un PDF Dymo usando EXACTAMENTE el mismo reporte estándar de Odoo
+        ('product.report_product_template_label_dymo') que utiliza el botón nativo
+        'Imprimir Etiquetas → Dymo'.
+
+        Las claves de quantity_by_product y custom_barcodes se pasan como **str**
+        porque _prepare_data() las consume con str(product.id).  Cuando el reporte
+        se renderiza via HTTP el paso por JSON lo haría automáticamente; aquí se
+        llama directo desde Python por lo que hay que hacerlo explícito.
+        """
+        quantity_by_product = defaultdict(int)
+        custom_barcodes = defaultdict(list)
+
+        lines = self.env['stock.move.line'].browse(list(batch_qty.keys()))
+        for line in lines:
+            qty = batch_qty[line.id]
+            if line.lot_id and qty > 0:
+                custom_barcodes[str(line.product_id.id)].append(
+                    (line.lot_id.name, qty)
+                )
+            else:
+                quantity_by_product[str(line.product_id.id)] += qty
+
+        # _prepare_data() requiere un product.label.layout válido para leer pricelist_id
+        pricelist = self.env['product.pricelist'].search(
+            [('active', '=', True), ('company_id', 'in', [False, self.env.company.id])],
+            limit=1,
+        )
+        layout_wizard = self.env['product.label.layout'].create({
+            'print_format': 'dymo',
+            'product_ids': [(6, 0, list({line.product_id.id for line in lines}))],
+            'pricelist_id': pricelist.id if pricelist else False,
+        })
+
+        data = {
+            'active_model': 'product.product',
+            'quantity_by_product': {k: v for k, v in quantity_by_product.items() if v > 0},
+            'custom_barcodes': dict(custom_barcodes),
+            'layout_wizard': layout_wizard.id,
+            'price_included': False,
+        }
+
+        pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
+            'product.report_product_template_label_dymo',
+            res_ids=None,
+            data=data,
+        )
+        return pdf_content
+
     def action_print_zip(self):
         """Divide las etiquetas en lotes de batch_size UNIDADES, genera un PDF por
         lote con las cantidades exactas por línea y los empaqueta en un ZIP.
+        Para Dymo usa el reporte estándar de Odoo para garantizar output idéntico.
         """
         self.ensure_one()
         self._assert_lines()
@@ -96,7 +147,6 @@ class StockLabelPaginationWizard(models.TransientModel):
         total = len(flat)
         batches_flat = [flat[i:i + self.batch_size] for i in range(0, total, self.batch_size)]
         name = self._picking_display_name()
-        report_xml_id = self._report_xml_id()
 
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
@@ -106,11 +156,15 @@ class StockLabelPaginationWizard(models.TransientModel):
                 for lid in batch_flat:
                     batch_qty[lid] = batch_qty.get(lid, 0) + 1
 
-                pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
-                    report_xml_id,
-                    res_ids=list(batch_qty.keys()),
-                    data={'quantities': batch_qty},
-                )
+                if self.label_format == 'dymo':
+                    # Usa el reporte estándar de Odoo → output 100% idéntico al botón nativo
+                    pdf_content = self._render_dymo_pdf(batch_qty)
+                else:
+                    pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
+                        _REPORT_A4,
+                        res_ids=list(batch_qty.keys()),
+                        data={'quantities': batch_qty},
+                    )
                 zf.writestr(
                     f'{name}_etiquetas_{idx:03d}_de_{len(batches_flat):03d}.pdf',
                     pdf_content,
