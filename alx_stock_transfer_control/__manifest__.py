@@ -31,6 +31,11 @@
         "views/stock_move_line_views.xml",
         "views/stock_picking_views.xml",
     ],
+    'assets': {
+        'web.assets_backend': [
+            'alx_stock_transfer_control/static/src/components/line_patch.xml',
+        ],
+    },
     'license': 'LGPL-3',
     'images': ['static/description/icon.png'],
     'installable': True,
