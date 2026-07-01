@@ -2,6 +2,31 @@
 <odoo>
 
     <!--
+        Barcode line edit form: make qty_done and digipad readonly/hidden
+        for everyone except Inventory Admin (group_stock_inventory_admin).
+        user_can_edit_qty is True only for admins (computed on stock.move.line
+        related from picking_id._compute_user_can_edit_qty).
+    -->
+    <record id="stock_move_line_barcode_form_control" model="ir.ui.view">
+        <field name="name">stock.move.line.barcode.form.control</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock_barcode.stock_move_line_product_selector"/>
+        <field name="arch" type="xml">
+
+            <!-- qty_done input: readonly for non-admins -->
+            <xpath expr="//div[@name='quantity']//field[@name='qty_done']" position="attributes">
+                <attribute name="readonly">not user_can_edit_qty</attribute>
+            </xpath>
+
+            <!-- Digipad: hidden for non-admins -->
+            <xpath expr="//div[@name='digipad']" position="attributes">
+                <attribute name="invisible">not user_can_edit_qty</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!--
         Detailed operations tree: block qty_done for operators (readonly=1),
         show captured_by_barcode indicator, and manual_entry_reason for supervisors.
     -->
