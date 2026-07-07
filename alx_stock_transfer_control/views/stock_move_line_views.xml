@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Barcode line edit form: make qty_done and digipad readonly/hidden
+        for everyone except Inventory Admin (group_stock_inventory_admin).
+        user_can_edit_qty is True only for admins (computed on stock.move.line
+        related from picking_id._compute_user_can_edit_qty).
+    -->
+    <record id="stock_move_line_barcode_form_control" model="ir.ui.view">
+        <field name="name">stock.move.line.barcode.form.control</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock_barcode.stock_move_line_product_selector"/>
+        <field name="arch" type="xml">
+
+            <!-- qty_done input: readonly for non-admins -->
+            <xpath expr="//div[@name='quantity']//field[@name='qty_done']" position="attributes">
+                <attribute name="readonly">not user_can_edit_qty</attribute>
+            </xpath>
+
+            <!-- Digipad: hidden for non-admins -->
+            <xpath expr="//div[@name='digipad']" position="attributes">
+                <attribute name="invisible">not user_can_edit_qty</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!--
+        Detailed operations tree: block qty_done for operators (readonly=1),
+        show captured_by_barcode indicator, and manual_entry_reason for supervisors.
+    -->
+    <record id="stock_move_line_list_control" model="ir.ui.view">
+        <field name="name">stock.move.line.list.control</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock.view_stock_move_line_detailed_operation_tree"/>
+        <field name="arch" type="xml">
+
+            <!--
+                quantity: editable only for group_stock_operator and group_stock_inventory_admin
+                when picking state != 'done'. Always readonly for other users and in done state.
+                Python write() also enforces this server-side.
+            -->
+            <xpath expr="//field[@name='quantity']" position="attributes">
+                <attribute name="readonly">not user_can_edit_qty</attribute>
+            </xpath>
+
+            <!-- Add barcode capture indicator after quantity -->
+            <xpath expr="//field[@name='quantity']" position="after">
+                <field name="captured_by_barcode" string="Escaneado" optional="show" readonly="1" widget="boolean_toggle"/>
+            </xpath>
+
+            <!-- Supervisor/Admin: reason text shown inline -->
+            <xpath expr="//field[@name='quantity']" position="after">
+                <field name="manual_entry_reason" optional="show" string="Motivo Manual" groups="alx_stock_transfer_control.group_stock_logistics_supervisor"/>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!--
+        Move line list inside the "Details" popup opened per-move from the Operations tab
+        (stock.view_stock_move_operations → list_view_ref: stock.view_stock_move_line_operation_tree).
+        We add the same fields here so they are visible in the picking form context.
+    -->
+    <record id="stock_move_line_operation_tree_control" model="ir.ui.view">
+        <field name="name">stock.move.line.operation.tree.control</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock.view_stock_move_line_operation_tree"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='quantity']" position="attributes">
+                <attribute name="readonly">state == 'done' and is_locked or not user_can_edit_qty</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='quantity']" position="after">
+                <field name="captured_by_barcode" string="Escaneado" optional="show" readonly="1" widget="boolean_toggle"/>
+            </xpath>
+
+            <xpath expr="//field[@name='quantity']" position="after">
+                <field name="manual_entry_reason" optional="show" string="Motivo Manual" groups="alx_stock_transfer_control.group_stock_logistics_supervisor"/>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

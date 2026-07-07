@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_users_form_inherit_stock_security" model="ir.ui.view">
+        <field name="name">res.users.form.inherit.stock.security</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='access_rights']" position="after">
+                <page string="Acceso a Almacenes" invisible="not is_stock_transfer_operator">
+                    <group>
+                        <field name="allowed_warehouse_ids" widget="many2many_tags"/>
+                    </group>
+                </page>
+            </xpath>
+            
+        </field>
+    </record>
+
+</odoo>

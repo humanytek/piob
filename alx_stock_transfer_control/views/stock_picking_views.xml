@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!--
+        Operators: picking_type_id, location_id, location_dest_id are readonly once confirmed.
+        Supervisors/Admins: can still edit (enforced at Python level via write() guard).
+    -->
+    <record id="view_picking_form_inherit_control" model="ir.ui.view">
+        <field name="name">stock.picking.form.inherit.control</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='picking_type_id']" position="attributes">
+                <attribute name="readonly">not user_can_edit_operations</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='location_id'][not(@invisible='1')]" position="attributes">
+                <attribute name="readonly">not user_can_edit_operations</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='location_dest_id'][not(@invisible='1')]" position="attributes">
+                <attribute name="readonly">not user_can_edit_operations</attribute>
+            </xpath>
+
+            <!--
+                Hide the Validate button entirely for operators. Operators must validate through the Barcode App, not the form view.
+            -->
+            <xpath expr="//button[@name='button_validate'][@class='oe_highlight']" position="attributes">
+                <attribute name="invisible">state in ('draft', 'confirmed', 'done', 'cancel') or not user_can_edit_operations</attribute>
+            </xpath>
+            <xpath expr="//button[@name='button_validate'][@class='o_btn_validate']" position="attributes">
+                <attribute name="invisible">state in ('waiting', 'assigned', 'done', 'cancel') or not user_can_edit_operations</attribute>
+            </xpath>
+
+            <xpath expr="//page[@name='operations']//field[@name='move_ids']//field[@name='quantity']" position="attributes">
+                <attribute name="readonly">not is_quantity_done_editable or not parent.user_can_edit_qty</attribute>
+            </xpath>
+
+            <!-- Show audit log tab for supervisors and admins -->
+            <xpath expr="//page[@name='extra']" position="after">
+                <page string="Registro de Auditoría" name="transfer_audit_log" groups="alx_stock_transfer_control.group_stock_inventory_admin">
+                    <field name="transfer_audit_ids" nolabel="1" readonly="1">
+                        <list>
+                            <field name="date"/>
+                            <field name="user_id"/>
+                            <field name="action"/>
+                            <field name="product_id"/>
+                            <field name="qty_expected"/>
+                            <field name="qty_done"/>
+                            <field name="authorized_by_id"/>
+                            <field name="reason"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- Audit log list view (menu for admins) -->
+    <record id="view_stock_transfer_audit_list" model="ir.ui.view">
+        <field name="name">stock.transfer.audit.list</field>
+        <field name="model">stock.transfer.audit</field>
+        <field name="arch" type="xml">
+            <list string="Registro de Auditoría de Traslados" default_order="date desc">
+                <field name="date"/>
+                <field name="picking_id"/>
+                <field name="user_id"/>
+                <field name="action"/>
+                <field name="product_id"/>
+                <field name="qty_expected"/>
+                <field name="qty_done"/>
+                <field name="authorized_by_id"/>
+                <field name="reason"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_stock_transfer_audit_search" model="ir.ui.view">
+        <field name="name">stock.transfer.audit.search</field>
+        <field name="model">stock.transfer.audit</field>
+        <field name="arch" type="xml">
+            <search string="Registro de Auditoría">
+                <field name="picking_id"/>
+                <field name="user_id"/>
+                <field name="product_id"/>
+                <filter string="Hoy" name="today"
+                        domain="[('date', '>=', context_today().strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter string="Con Diferencias" name="differences" domain="[('action', '=', 'validate_diff')]"/>
+                <filter string="Capturas Manuales" name="manual" domain="[('action', '=', 'manual_entry')]"/>
+                <group>
+                    <filter string="Traslado" name="group_picking" context="{'group_by': 'picking_id'}"/>
+                    <filter string="Usuario" name="group_user" context="{'group_by': 'user_id'}"/>
+                    <filter string="Acción" name="group_action" context="{'group_by': 'action'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action for audit log -->
+    <record id="action_stock_transfer_audit" model="ir.actions.act_window">
+        <field name="name">Registro de Auditoría de Traslados</field>
+        <field name="res_model">stock.transfer.audit</field>
+        <field name="view_mode">list</field>
+        <field name="context">{}</field>
+    </record>
+
+    <!-- Menu entry under Inventory > Reporting (only for admins) -->
+    <menuitem
+        id="menu_stock_transfer_audit"
+        name="Registro de Auditoría de Traslados"
+        parent="stock.menu_stock_warehouse_mgmt"
+        action="action_stock_transfer_audit"
+        groups="alx_stock_transfer_control.group_stock_inventory_admin"
+        sequence="99"/>
+
+</odoo>

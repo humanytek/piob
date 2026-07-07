@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_stock_transfer_audit_operator,stock.transfer.audit.operator,model_stock_transfer_audit,alx_stock_transfer_control.group_stock_operator,1,0,0,0
+access_stock_transfer_audit_supervisor,stock.transfer.audit.supervisor,model_stock_transfer_audit,alx_stock_transfer_control.group_stock_logistics_supervisor,1,1,1,0
+access_stock_transfer_audit_admin,stock.transfer.audit.admin,model_stock_transfer_audit,alx_stock_transfer_control.group_stock_inventory_admin,1,1,1,1
