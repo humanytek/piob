@@ -87,11 +87,26 @@ class StockMoveLine(models.Model):
         return super().write(vals)
 
     def unlink(self):
-        """Only Admins (and sudo/system) can delete move lines where work has been confirmed."""
-        
-        if not self.env.su and not self.env.user.has_group('alx_stock_transfer_control.group_stock_inventory_admin'):
+        """
+        Only Admins (and sudo/system) can delete move lines where work has been
+        confirmed — UNLESS the call originates from the Barcode App.
+
+        The Barcode App legitimately needs to delete move lines in two cases:
+          1. Internal cleanup: `stock.move.post_barcode_process` →
+             `split_uncompleted_moves()` removes zero-quantity / orphan lines
+             after every barcode save.  That method is invoked via a plain
+             `call_kw` request (not our custom save endpoint), so we inject
+             `from_barcode_app=True` in our `StockMove.post_barcode_process`
+             override and honour it here.
+          2. Explicit user action: the Barcode App's "delete line" button calls
+             `stock.move.line.unlink` directly for extra (unreserved) lines the
+             operator wants to remove while scanning.
+        """
+        from_barcode = self._is_from_barcode_app()
+
+        if not self.env.su and not from_barcode and not self.env.user.has_group('alx_stock_transfer_control.group_stock_inventory_admin'):
             processed = self.filtered(lambda l: l.picked or l.captured_by_barcode)
-            
+
             if processed:
                 raise ValidationError(_("No está permitido eliminar líneas de movimiento con trabajo confirmado. Contacte a su administrador para corregir este traslado."))
         
