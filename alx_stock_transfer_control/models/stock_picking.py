@@ -92,7 +92,11 @@ class StockPicking(models.Model):
     # -------------------------------------------------------------------------
     def _check_exact_quantities(self):
         """
-        Operators/Supervisors: must scan EXACTLY the expected quantity on every move.
+        Operators: must scan EXACTLY the expected quantity on every move — no skipping allowed.
+        Supervisors: may leave moves untouched (qty=0 will create a backorder), but any move
+                     that was partially started must have EXACTLY the expected quantity.
+                     It's all-or-nothing per product line.
+        Admins: can validate with any quantity difference (always audited).
         """
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for picking in self:
@@ -101,9 +105,24 @@ class StockPicking(models.Model):
                 # Only count lines the operator has confirmed ('picked' flag)
                 done = sum(move.move_line_ids.filtered('picked').mapped('quantity'))
 
+                # ── Case 1: nothing scanned for this move ─────────────────────
+                if float_is_zero(done, precision_digits=precision):
+                    if picking._user_can_bypass_barcode_check():
+                        # Supervisors and admins can skip a move entirely.
+                        # Odoo's standard flow will create a backorder for it.
+                        continue
+                    else:
+                        # Operators must scan every product — skipping is not allowed.
+                        raise ValidationError(_(
+                            "El producto '%(product)s' no fue escaneado. "
+                            "Debe escanear la cantidad exacta antes de validar.",
+                            product=move.product_id.display_name,
+                        ))
+
+                # ── Case 2: some quantity scanned — must match exactly (or admin) ──
                 if float_compare(expected, done, precision_digits=precision) != 0:
                     if picking._user_can_bypass_qty_check():
-                        # Audit the difference
+                        # Admin: audit the difference and allow
                         self.env['stock.transfer.audit'].sudo().create({
                             'picking_id': picking.id,
                             'action': 'validate_diff',
@@ -114,12 +133,13 @@ class StockPicking(models.Model):
                             'authorized_by_id': self.env.user.id,
                             'reason': 'Admin validated with quantity difference.',
                         })
-
                     else:
+                        # Operators and supervisors: partial qty on a started move is forbidden.
+                        # Must scan the full demand or leave the move at 0 (backorder).
                         raise ValidationError(_(
                             "Discrepancia de cantidad en el producto '%(product)s': "
                             "esperada %(expected)s, escaneada %(done)s. "
-                            "Debe escanear la cantidad exacta.",
+                            "Debe escanear la cantidad exacta o dejar el producto sin escanear para crear un pedido pendiente.",
                             product=move.product_id.display_name,
                             expected=expected,
                             done=done,
